@@ -12,7 +12,7 @@ if "x%NCCLIENTDIR%"=="x" (
   goto :end
 )
 
-rem if "x%1"=="x-stop" goto :stop_client
+if "x%1"=="x-stop" goto :stop_client
 
 rem TBD: Option to delete launcher config file (to reset settings)
 
@@ -64,7 +64,7 @@ if not errorlevel 0 call :save_config
 goto :end
 
 :stop_client
-"%NCCLIENTDIR\nclauncher.exe" -stop
+"%NCCLIENTDIR%\nclauncher.exe" -stop
 goto :end
 
 REM --------------------------------------------------------
