@@ -12,35 +12,42 @@ if "x%NCCLIENTDIR%"=="x" (
   goto :end
 )
 
-rem CONFIGURE: Set your preferred VPN host here.
-set url=define-your-vpn-host-here
-ping -n 1 %url% >nul
+rem if "x%1"=="x-stop" goto :stop_client
+
+rem TBD: Option to delete launcher config file (to reset settings)
+
+call :load_config
+if "x%NCLAUNCHER_URL%"==x goto :autodetect
+ping -n 1 %NCLAUNCHER_URL% >nul
 if not errorlevel 1 goto :validhost
 
+:autodetect
 rem Try to auto-detect the VPN host from the config file
 set NCCLIENTCONFIG="%NCCLIENTDIR%\..\Common Files\config.ini"
-if exist %NCCLIENTCONFIG% for /f "delims=[]" %%A in ('findstr [[a-z0-9]\. %NCCLIENTCONFIG% ^| findstr /V "Network Connect"') do set url=%%A
-ping -n 1 %url% >nul
+if exist %NCCLIENTCONFIG% for /f "delims=[]" %%A in ('findstr [[a-z0-9]\. %NCCLIENTCONFIG% ^| findstr /V "Network Connect"') do set NCLAUNCHER_URL=%%A
+ping -n 1 %NCLAUNCHER_URL% >nul
 if errorlevel 1 (
-  echo ERROR: Host %url% does not ping. Please check your configuration.
+  echo ERROR: Host %NCLAUNCHER_URL% does not ping. Please check your configuration.
   goto :end
 )
 
 :validhost
-call :read_no_history url %url% "VPN host"
+call :read_no_history NCLAUNCHER_URL %NCLAUNCHER_URL% "VPN host"
 
-set user=%USERNAME%
-call :read_no_history user %user% "Username"
+if "x%NCLAUNCHER_USER%"=="x" set NCLAUNCHER_USER=%USERNAME%
+call :read_no_history NCLAUNCHER_USER %NCLAUNCHER_USER% "Username"
 
-rem CONFIGURE: Set your preferred realm here. By default, the script
-rem assumes two-stage authentication using a PIN and RSA SecurID.
+REM CONFIGURE: Set your preferred realm here. By default, the script
+REM assumes two-stage authentication using a PIN and RSA SecurID.
+REM TBD: Query server for default realm   
 
-set realm="SecurID(Network Connect)"
-call :read_no_history realm %realm% "Realm"
+if x%NCLAUNCHER_REALM%==x set NCLAUNCHER_REALM="SecurID(Network Connect)"
+
+call :read_no_history NCLAUNCHER_REALM %NCLAUNCHER_REALM% "Realm"
 
 REM TODO: Hide password input
 set password=""
-call :read_no_history password %password% "Enter PIN + token value for user %user%:" 
+call :read_no_history password %password% "Enter PIN + token value for user %NCLAUNCHER_USER%:" 
 if x%password%==x (
   echo ERROR: No password specified
   goto :end
@@ -50,7 +57,14 @@ cls
 
 echo Launching Juniper Network Connect client in
 echo   %NCCLIENTDIR%...
-"%NCCLIENTDIR%\nclauncher.exe" -url %url% -u %user% -p %password% -r %realm%
+"%NCCLIENTDIR%\nclauncher.exe" -url %NCLAUNCHER_URL% -u %NCLAUNCHER_USER% -p %password% -r %NCLAUNCHER_REALM%
+rem echo ERRORLEVEL=%ERRORLEVEL%
+rem pause
+if not errorlevel 0 call :save_config
+goto :end
+
+:stop_client
+"%NCCLIENTDIR\nclauncher.exe" -stop
 goto :end
 
 REM --------------------------------------------------------
@@ -96,6 +110,30 @@ del %RNH_CMDFILE%
 endlocal & if not x%RNH_TEMP%==x set "%~1=%RNH_TEMP%"
 goto :eof
 
+
+REM --------------------------------------------------------
+REM load_config
+:load_config
+set NCLAUNCHERCONFIG=%USERPROFILE%\nclauncher.cfg.bat
+if exist %NCLAUNCHERCONFIG% call %NCLAUNCHERCONFIG%
+goto :eof
+
+REM --------------------------------------------------------
+REM save_config
+:save_config
+set NCLAUNCHERCONFIG=%USERPROFILE%\nclauncher.cfg.bat
+echo set NCLAUNCHER_URL=%NCLAUNCHER_URL% >%NCLAUNCHERCONFIG%
+echo set NCLAUNCHER_USER=%NCLAUNCHER_USER% >>%NCLAUNCHERCONFIG%
+echo set NCLAUNCHER_REALM=%NCLAUNCHER_REALM% >>%NCLAUNCHERCONFIG%
+echo Configuration written to %NCLAUNCHERCONFIG.
+goto :eof
+
+REM --------------------------------------------------------
+REM delete_config
+:delete_config
+set NCLAUNCHERCONFIG=%USERPROFILE%\nclauncher.cfg.bat
+if exist %NCLAUNCHERCONFIG% del /q %NCLAUNCHERCONFIG%
+goto :eof
 
 REM --------------------------------------------------------
 :end

@@ -1,0 +1,28 @@
+nclauncher
+
+PROJECT DETAILS
+
+Author: Claus Brod
+Project homepage: http://www.clausbrod.de/Blog/DefinePrivatePublic20110820JuniperNetworkConnect
+Github: https://github.com/clausb/nclauncher
+
+DESCRIPTION
+
+Like many other companies, my company provides VPN access to its employees 
+so that we can stay connected from our home offices or on the road. Most 
+of the time, I connect to the company network through a web portal which 
+downloads, installs and runs Juniper's "Network Connect" software on the 
+Windows client system. That's all fine and dandy, except that I am a 
+command-line guy and find it way too clumsy to fire up a web browser just 
+in order to "dial in".
+
+Fortunately, Juniper's Network Connect client has a command-line interface, 
+and so here is a trivial DOS batch script which can be used to establish a 
+connection in "I-don't-need-no-stinkin'-buttons" mode.
+
+The script assumes that the Network Connect client has been installed and 
+run in the usual manner (i.e. from the web portal) at least once. It will 
+attempt to auto-detect the VPN host and user name, so in most cases all 
+you have to specify is password information. Oh, and the script assumes 
+you want to connect to the "SecurID(Network Connect)" realm by default, which 
+requires entering a PIN and a number displayed on your RSA SecurID token. 
